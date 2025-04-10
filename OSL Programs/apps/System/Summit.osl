@@ -1,0 +1,236 @@
+import "window_tools" as "wt"
+import as "glass" from "packages"
+
+url = "https://raw.githubusercontent.com/Mistium/owtp/main/"
+
+loaded_pages = {}
+current_pages = []
+summit = {}
+
+def "redirect" "this.url" (
+  summit.redirect_url = this.url
+)
+
+def "draw_page" "this.url, this.page_type, this.tab_id" (
+  current_pages.append(this.url)
+  
+  if loaded_pages.contains(this.url) (
+    onload = loaded_pages[this.url].onload
+    run loaded_pages[this.url].data "sandboxed"
+    if summit.redirect_url != "" (
+    
+      if summit.redirect_url.split("/").last().contains(".").not or summit.redirect_url.endsWith(".web") (
+        summit.redirect_url = summit.redirect_url.append("/index.osl")
+      )
+      tabs[this.tab_id].url = summit.redirect_url
+      tabs[this.tab_id].position ++
+      tabs[this.tab_id].history = tabs[this.tab_id].history.append(summit.redirect_url)
+      summit.redirect_url = ""
+    )
+    tabs[this.tab_id].page_len = page_len
+    tabs[this.tab_id].icon = current_tab_name.icon
+    tabs[this.tab_id].title = current_tab_name.title
+    current_tab_name = {}
+    page_len = 0
+    loaded_pages[this.url].onload = false
+  ) else (
+    this.data = (url ++ this.url).getAsync()
+    if this.data != "Loading" (
+      loaded_pages[this.url] = {
+        "data": this.data.split("\n"),
+        "onload": true
+      }
+    )
+  )
+)
+
+def "page_frame" "this.left, this.top, this.right, this.bottom, this.url" (
+
+  this.tab_id = this.url
+  
+  this.idx = tabs.getKeys("id").index(this.url)
+  
+  this.tab = tabs[this.idx]
+  
+  this.url = this.tab.history[this.tab.position]
+  
+  this.w = (this.right - this.left).abs()
+  this.h = (this.top - this.bottom).abs()
+  
+  x = this.left + (this.w / 2)
+  y = this.bottom + (this.h / 2)
+  goto x y
+  c window_colour
+  square this.w this.h 10
+
+  frame this.left this.top this.right this.bottom tabs[this.idx].page_len tabs[this.idx].id
+    this.page_type = "text"
+    if this.url.startsWith("owtp://") (
+      if this.url.endsWith("/") (
+        this.url = this.url.trim(1,-2)
+      )
+      this.url = this.url.trim(8,-1)
+      if this.url.endsWith(".osl") (
+        this.page_type = "osl"
+      )
+      if this.url.endsWith(".web") (
+        this.url = this.url ++ "/index.osl"
+      )
+    )
+    scroll_y = frame.scroll
+    draw_page this.url this.page_type this.idx
+    scroll_y = 0
+  frame "clear"
+)
+
+def "add_tab" "this.url" (
+  this.obj = {
+    "title": "Loading",
+    "position": 1,
+    "icon": "refresh",
+    "id": ouidNew(),
+    "history": [this.url]
+  }
+  
+  tabs.append(this.obj)
+  
+  current_tabs = [this.obj.id]
+)
+
+tabs = []
+
+add_tab "owtp://search.web"
+
+current_tabs = [tabs[1].id]
+
+sidebar = {
+  "width":300,
+  "x":-300,
+  "target_x":0,
+  "icons":[
+    {
+      "icn":"w 3 cutcircle -2 2 8 0 180 w 3.5 line 4 -4 12 -12",
+      "func":"search"
+    },
+    {
+      "icn":"left-arrow",
+      "func":"back"
+    },
+    {
+      "icn":"right-arrow",
+      "func":"forward"
+    }
+  ],
+  "handleSize": def() -> (
+    sidebar.x += sidebar.target_x - sidebar.x / 7
+    return sidebar
+  ),
+}
+
+sidebar.main = def() -> (
+  sidebar = sidebar.handleSize()
+  // sidebar.handleSize()
+  
+  if mouse_x < window.left + 30 and onclick (
+    sidebar.target_x = 0
+  )
+
+  sidebar.left = window.left + sidebar.x
+  
+  sidebar.edge = sidebar.left + sidebar.width
+  
+  frame sidebar.left window.top sidebar.edge window.bottom (
+    goto 0 0
+    square frame.width - 20 frame.height - 20 10 : c#window_colour
+    
+    c txtc
+    loc -2 2 -25 -25
+    icon "left" 0.7
+    if onclick (
+      sidebar.target_x = -300
+    )
+    
+    goto 0 frame.top - 65
+    c prim
+    square frame.width - 40 30 10
+    input frame.width - 50 25 "main" "Enter A URL"
+    if "enter".onpress and selected_input == "main" (
+      add_tab input_main
+      input_main = ""
+    )
+    
+    if sidebar.x > -280 (
+      c txtc
+      loc 2 2 25 -25
+      each i sidebar.icons (
+        icon i.icn 0.7
+        change_x 30
+      )
+    
+      c seco
+      frame frame.left + 10 frame.top - 90 frame.right - 10 frame.bottom tabs.len * 45 (
+        goto 0 frame.top + frame.scroll - 25
+        each this.i this.tab tabs (
+          set_x 0
+          square frame.width 40 0 0 1
+          if current_tabs.contains(this.tab.id) (
+            square frame.width - 20 30 15 : c#seco
+            square frame.width - 20 30 10 : c#window_colour
+          )
+          if mouse_touching (
+            square frame.width - 20 30 15 : c#global_accent
+            square frame.width - 20 30 10 : c#window_colour
+            if onclick (
+              if current_tabs.contains(this.tab.id) (
+                current_tabs.delete(this.tab.id)
+              ) else (
+                current_tabs.append(this.tab.id)
+              )
+            )
+          )
+          set_x frame.left + 20
+          icon this.tab.icon 0.7 : c#txtc
+          text this.tab.title.trimText(frame.width - 70 / 9) 9 : chx#20
+          set_x frame.right - 25
+          icon "close" 0.6
+          if onclick (
+            tabs.delete(this.i)
+          )
+          change_y -45
+        )
+      )
+      goto 0 window.top
+    )
+  )
+  
+  return sidebar
+)
+
+mainloop:
+wt:load_theme
+
+each this.page loaded_pages.getKeys() (
+  if current_pages.contains(this.page).not (
+    loaded_pages.delete(this.page)
+  )
+)
+
+current_pages = []
+
+glass:frame window.left window.top window.right window.bottom; frame "clear"
+
+sidebar = sidebar.main()
+
+this.left = sidebar.edge + 10
+this.right = window.right - 10
+this.w = this.right - this.left
+this.tab_w = this.w / current_tabs.len
+this.right = this.left + this.tab_w
+
+each this.tab current_tabs (
+  page_frame this.left window.top - 10 this.right window.bottom + 10 this.tab
+  this.left += this.tab_w
+  this.right += this.tab_w
+)
+
+import "win-buttons"

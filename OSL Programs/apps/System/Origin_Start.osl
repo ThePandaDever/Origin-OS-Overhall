@@ -1,0 +1,220 @@
+import "window_tools" as "wt"
+
+permission "request" "account"
+window_y = screensize_y * -1.2
+window "dimensions" screensize_x screensize_y
+window.no_desktop = true
+
+network "my_files_usage"
+
+def "openapp" "name"
+  window "add" name
+  window "stop"
+endef
+
+def "find_sizes"
+  use1 = usage[1].int / 1000
+  unit = "kb"
+  if use1 > 1000 (
+    unit = "mb"
+    use1 = use1.int / 1000
+    if use1 > 1000 (
+      unit = "gb"
+      use1 = use1.int / 1000
+    )
+  )
+  use2 = usage[2].int / 1000000
+  unit2 = "mb"
+  if use2 > 1000 (
+    unit2 = "gb"
+    use2 = use2.int / 1000
+  )
+  use1 = (use1 * 10).round / 10
+  use2 = (use2 * 10).round / 10
+endef
+
+target_y = 0
+usage = []
+use1 = "none"
+
+v = origin.version
+version = v.trim(1,v.len - 2) ++ "." ++ v[v.len - 1] ++ "." ++ v[v.len]
+
+repo_data = ""
+
+chat_y = 0
+target_chat_y = 0
+
+def "close" (
+  network "server" "disconnect_rotur_discord"
+  window "stop"
+)
+
+network "server" "connect_rotur_discord"
+
+discord_messages = []
+
+repo_data = "https://api.github.com/repos/Mistium/Origin-OS".get()
+
+mainloop:
+
+wt:load_theme
+
+if new_network_data (
+  if network_data_command == "my_files_usage" (
+    usage = network_data
+  )
+  if network_data_command == "new_rotur_discord" (
+    discord_messages.append(network_data)
+  )
+  new_network_data = false
+)
+
+window_y += target_y - window_y / 5
+if window_y.round() != target_y.round() (
+  window "refresh_bg"
+)
+window "y" window_y.round()
+
+square 700 700 15 : c#global_accent
+square 700 700 10 1 : c#window_colour
+if mouse_down and clicked.not (
+  close
+)
+
+goto 0 0
+square 0 700 10 : c#prim
+goto 0 325
+square 700 50 10 : c#seco
+goto 0 -325
+square 700 50 10
+goto -325 325
+image user_icon.str 40
+
+goto 325 -325
+icon "power" 1 : hover_size#1.05 c#txtc
+if clicked (
+  network "logout"
+  terminal "shutdown"
+)
+
+icon "settings" 1 : chx#-50 hover_size#1.05
+if clicked (
+  openapp "settings"
+)
+
+icon "w 1.5 line 0 -4 5 -4 line -2 0 -6 4 line -2 0 -6 -4" 2 : chx#-50 hover_size#1.05
+if clicked (
+  openapp "terminal"
+)
+
+if hour < 12 (
+  msg = "Good Morning" + username
+) else (
+  msg = "Good Afternoon" + username
+)
+goto -290 325
+text msg 13 : c#txtc
+
+goto 325 325
+icon "close" 1
+if clicked (
+  close
+)
+
+goto -180 230
+square 320 100 10 : c#prim
+
+if usage.len == 0 (
+  change_x -100
+  text "Loading Storage Info" 10 : c#txtc
+) else (
+  if use1 == "none" "find_sizes"
+  goto -245 260
+  text "Storage" 10 : c#txtc
+  goto -245 230
+  text `Used ${use1}${unit} / ${use2}${unit2}` 9
+  goto -140 200
+  bar 200 20 10 usage[3] : c#seco
+  usepercent = (usage[3] * 100).round ++ "%"
+  goto -295 - (usepercent.len * 8) 230
+  text usepercent 16 : c#txtc
+)
+
+goto -180 110
+square 320 100 10 : c#738bd7
+if mouse_touching (
+  cursor "pointer"
+  if clicked (
+    http "newtab" "https://discord.gg/aujmXHtgXA"
+  )
+)
+image "https://discordapp.com/api/guilds/1147362734300725298/widget.png?style=banner2" 320
+
+goto -180 -10
+square 320 100 10 : c#prim
+if mouse_touching (
+  cursor "pointer"
+  if onclick (
+    http "newtab" "https://github.com/Mistium/Origin-OS"
+  )
+)
+goto -290 -10
+image "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Resources/github_icon.png" 60
+goto -230 2
+text "Github" 13 : c#txtc
+goto -222 -27
+icon "w 3 line 0 9.5 5 3 cont 10 3 cont 5 -2 cont 7 -10 cont 0 -5 cont -7 -10 cont -5 -2 cont -10 3 cont -5 3 cont 0 9.5" 0.7
+text repo_data.stargazers_count 10 : chx#15
+icon "eye" 0.7 : chx#30
+text repo_data.subscribers_count 10 : chx#15
+
+goto -180 -130
+square 320 100 10 : c#prim
+change_x -110
+icon "origin-logo" 2.5 : c#txtc
+change 50 10
+c #fff
+text "originOS" 13
+change -50 -20
+text "v" ++ version 10
+
+
+frame -5 295 350 -295
+  goto 0 0
+  square frame.width frame.height 10 : c#prim
+  loc 2 2 50 -540 + chat_y
+  x = x_position
+  c txtc
+  start_y = y_position
+  if discord_messages.len > 15 (
+    discord_messages.delete(1)
+  )
+  each i message discord_messages (
+    set_x x
+    if message.onlycontent.not (
+      change -30 -30
+      image message.avatar_url 30
+      change 30 10
+      text message.username 10
+      set_x x
+      change_y -20
+      text message.content 9
+      change_y -20
+    ) else (
+      text message.content 9
+      change_y -20
+    )
+  )
+  target_chat_y = start_y - y_position
+  chat_y += target_chat_y - chat_y / 10
+  
+  goto 0 frame.bottom + 25
+  c window_colour
+  square frame.width - 25 30 10
+  input frame.width - 35 25 "message" "Type to originOS & roturTW #general"
+  if "enter".onpress and selected_input == "message" and input_message != "" (
+    network "server" "send_rotur_discord" input_message
+    input_message = ""
+  )
+frame "clear"

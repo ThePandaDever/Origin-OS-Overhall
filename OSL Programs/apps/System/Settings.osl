@@ -1,0 +1,1117 @@
+import "window_tools"
+import as "glass" from "packages"
+load_theme
+
+permission "request" "save admin"
+permission "request" "javascript"
+permission "request" "terminal"
+permission "request" "file admin"
+permission "request" "account"
+permission "request" "kernel"
+
+
+def "setting_toggle" "this.txt, this.w, this.state, this.callback" (
+  this.x = x_position
+  square this.w 30 10 : c#prim
+  change_x this.w / -2 + 10
+  text this.txt 10 : c#txtc
+  set_x this.x + (this.w / 2 - 15)
+  square 30 30 5 : c#seco
+  if onclick (
+    return this.callback()
+  )
+  if this.state (
+    icon "tick" 0.8 : c#txtc
+  )
+)
+
+def "setting_do" "this.txt, this.w, this.callback" (
+  square this.w 30 10 : c#prim
+  if onclick (
+    return this.callback()
+  )
+
+  change_x this.w / -2 + 10
+  text this.txt 10 : c#txtc
+)
+
+
+def "appopt" "optname,opticn,icnsize" (
+  loc 999 2 0 y
+  square frame_width - 25 30 10 1 : c#prim
+  loc 2 2 30 y
+  icon opticn icnsize.destr : c#txtc
+  change_x 25
+  text optname 8
+)
+
+def "DrawCategory" "setting,icn_code" (
+  temp = x_position
+  change_x 80
+  if category == setting (
+    square 190 30 15 : c#seco
+    square 190 30 10 : c#prim
+  ) else (
+    square 190 30 15 : c#prim
+  )
+  if onclick (
+    category = setting
+    subcategory = "none"
+  )
+  icon icn_code 0.8 : c#txtc chx#-80
+  change_x 30
+  text setting 10
+  goto temp y_position - 50
+)
+
+def "option" "name,icn_code" (
+  loc 999 2 0 y
+  this.w = frame_width - 25
+  square this.w 30 10 0 1
+  if mouse_touching (
+    square this.w 30 15 : c#seco
+    square this.w 30 10 : c#prim
+    if onclick "gotosubcategory = name"
+  ) else (
+    square this.w 30 15 1 : c#prim
+  )
+  change_x this.w / -2 + 20
+  if icn_code == "" "icn_code = name"
+  icon icn_code 0.8 : c#txtc
+  text name 10 : chx#30
+  y -= 50
+  page_len += 50
+)
+
+def "system" (
+  if network_drive.istype("array").not (
+    mem = "navigator.deviceMemory".eval
+    cores = "navigator.hardwareConcurrency".eval
+
+    if network_drive == "none" and tier == null (
+      network "my_files_usage"
+      tier = "Loading..."
+      unit = null
+    )
+    if new_network_data (
+      if network_data_command == "my_files_usage" (
+        network_drive = network_data.destr
+        switch network_drive[2] (
+          case 5000000
+            tier = "Free Tier"
+            break
+          case 10000000
+            tier = "Supporter"
+            break
+          case 50000000
+            tier = "originDrive"
+            break
+          case 100000000
+            tier = "originPro"
+            break
+          default
+            tier = "Unknown"
+            break
+        )
+        if username == "Mist" (
+          tier = "Admin"
+        )
+        if network_drive[2] > 999999 (
+          used_big = (network_drive[2] / 1000000).round
+          unit = "mb"
+        )
+        if network_drive[2] > 999999999 (
+          used_big = (network_drive[2] / 1000000000).round
+          unit = "gb"
+        )
+      )
+      new_network_data = false
+    )
+  )
+  switch subcategory (
+    case "none"
+      option "Info" "w 2 cutcircle 0 0 10 0 180 w 3 line 0 0 0 -5 dot 0 5"
+      option "Display" "w 3 square 0 3 10 7 w 3 line 0 -7 0 -10 line -6 -10 6 -10"
+      option "Media" "w 2 cutcircle -3 -1.5 6.5 -9 90 line -3 5 0 7 line -3 -8 0 -10 line 0 -10 0 7 cutcircle 4 -2 3 9 90 cutcircle 4 -2 8 9 80"
+      option "Notifications" "w 2 cutcircle 0 -6 4 18 80 cutcircle 0 2 8 0 80 w 2.5 line -10 -5 10 -5 line -10 -5 -8 4 line 10 -5 8 5"
+      option "Boot Applications" "w 2.5 cutcircle 0 0 10 18 130 line 0 4 0 10"
+      option "Storage" "w 3 line -10 10 5 10 cont 10 5 cont 10 -10 cont -10 -10 cont -10 10 line -4 5 2 5 w 8 line 0 -2 0 -2"
+      option "Multitasking" "w 2 line -10 5 0 10 line 10 5 0 10 line 0 0 -10 5 line 0 0 10 5 line -10 -1 0 -6 line 10 -1 0 -6 line -10 -7 0 -12 line 10 -7 0 -12"
+      option "Community" "w 2 cutcircle 0 4 5 0 180 line -6 -5 6 -5 line 6 -5 8 -10 line -6 -5 -8 -10 line -8 -10 8 -10"
+      break
+    case "Info"
+      loc 9999 2 0 -160
+      w = frame.width - 25
+      h = 280
+      square w h 15 : c#seco
+      square w h 10 : c#prim
+      loc 2 2 40 -70
+      x = x_position
+      c txtc
+      kernel = origin.kernel
+      loc 0 2 0 -50
+      set_x x
+      text "originOS " 15
+      text kernel.name 12
+      set_x x : chy#-20
+      text "Version" + origin.version 9
+      set_x x : chy#-30
+      text "Kernel   |  " ++ kernel.name + kernel.version + kernel["type"] 9
+      set_x x : chy#-20
+      text "Storage  |  " ++ used_big ++ unit 9
+      set_x x : chy#-20
+      text "Used     |  " ++ ((network_drive[1] / 10).round / 100) ++ "kb" 9
+      set_x x : chy#-20
+      text "Screen   |  " ++ screensize_x ++ "x" ++ screensize_y 9
+      set_x x : chy#-20
+
+      if system_url.startsWith("https://origin.mistium.com") (
+        text "Host     |  Official" 9
+      ) else (
+        text "Host     |  Editor" 9
+      )
+      set_x x : chy#-20
+      text "Shell    |  OTS" 9
+      break
+    case "Display"
+      loc 2 2 10 -20
+      text `Origin Resolution: ${screensize_x}x${screensize_y}` 10 : c#txtc
+      terminal "system display get invert"
+      toggle_invert = (data / 100).round.bool
+      loc 2 2 10 -70
+      c txtc
+      text "Invert Colours" 10
+      toggle "invert" 20 : c#prim chx#30
+      inp = toggle_invert.int * 100
+      terminal "system display set invert" + inp.str
+      loc 2 2 10 -110
+      text "Night Mode" 10 : c#txtc
+      terminal "flags nightmode get"
+      toggle_nightmode = data
+      toggle "nightmode" 20 : c#prim chx#70
+      terminal "flags nightmode set" + toggle_nightmode.str
+      break
+    case "Media"
+      if media == "" (
+        terminal "get access camera"
+        data2 = data
+        terminal "get access microphone"
+        if "granted" in (data + data2) (
+          terminal "get mediadevices"
+          media = data
+          keys = media.getKeys()
+          types = media.getValues().getKeys("type")
+        ) else (
+          media = "Please Grant Origin Microphone And Camera Permissions"
+        )
+      )
+      loc 2 2 10 -40 + scroll_y
+      text "System Volume" + (slider_volume * 100).round ++ "%" 10 : c#txtc
+      loc 999 2 0 -90 + scroll_y
+      terminal "system sound get volume"
+      slider_volume = data / 100
+      slider frame_width - 25 40 "volume" 15 : c#prim
+      terminal "system sound set volume" + ( slider_volume * 100 )
+      c txtc
+      loc 2 2 10 -160 + scroll_y
+      if media.istype("object") (
+        text "Media Devices" 10
+        for i keys.len (
+          y = i + 2.5 * -60 + scroll_y
+          loc 999 2 0 y
+          w = frame.width - 25
+          square w 40 15 : c#prim
+          if mouse_touching (
+            square w 40 15 : c#seco
+            square w 40 10 : c#prim
+          )
+          cur = keys[i]
+          loc 2 2 30 y
+          square 30 30 10 : c#seco
+          c txtc
+          type = types[i]
+          if type == "audiooutput" or type == "audioboth" (
+            icon "w 2 cutcircle -3 -1.5 6.5 -9 90 line -3 5 0 7 line -3 -8 0 -10 line 0 -10 0 7 cutcircle 4 -2 3 9 90 cutcircle 4 -2 8 9 80" 0.7
+          )
+          if type == "audioinput" (
+            icon "w 3 line 0 -8 0 -5 line -4 -10 4 -10 cutcircle 0 2 7 18 70 w 7 line 0 2 0 8" 0.7
+          )
+          if type == "videoinput" (
+            icon "w 3 line 8 -6 8 6 cont -4 6 cont -4 -6 cont 8 -6 cont -4 -6 cont -4 0 cont -10 -5 cont -10 5 cont -4 0" 0.7
+          )
+          text cur 9 : chx#30
+        )
+        page_len = keys.len + 2.5 * 60
+      ) else (
+        text media 10
+        page_len = 100
+      )
+      break
+    case "Boot Applications"
+      boot_apps = user.onboot
+      if new_transmit (
+        file "open" transmit_data
+        f = file[3] ++ "/" ++ file[2] ++ file[1]
+        boot_apps.append(f)
+        network "update" "onboot" boot_apps
+        new_transmit = false
+      )
+      loc 2 2 20 -20 + scroll_y
+      text "Reset Boot To Default: " 10 : c#txtc
+      icon "w 4 cutcircle 0 -2 11 13.5 150 line -6 9 0 15 line -6 10 0 3" 0.7 : chx#20
+      if onclick (
+        boot_apps = ["Origin/(A) System/System Apps/Desktop.osl","Origin/(A) System/Docks/Dock.osl","Origin/(A) System/System Apps/Quick_Settings.osl"]
+        network "update" "onboot" boot_apps
+      )
+      loc 2 2 20 -70 + scroll_y
+      text "Drop File Here" 9 : c#txtc
+      if file_dropped != 0 (
+        file "open" file_dropped "onlyaccess"
+        file "get" 3
+        d3 = data
+        file "get" 2
+        d2 = data
+        file "get" 1
+        f = d3 ++ "/" ++ d2 ++ data
+        boot_apps = boot_apps.append(f)
+        network "update" "onboot" boot_apps
+        file_dropped = 0
+      )
+      loc 2 2 20 -100 + scroll_y
+      text "Click here to pick an osl file" 9
+      if onclick (
+        file "pick" "osl"
+        can = false
+      )
+      count = 0
+      loop boot_apps.len (
+        count ++
+        y = count + 2 * -60 + scroll_y
+        loc 999 2 0 y
+        square frame_width - 25 40 15 : c#prim
+        loc 2 2 15 y
+        text boot_apps[count] 9 : c#txtc
+        loc -2 2 -33 y
+        square 30 30 10 0 1
+        if mouse_touching (
+          square 30 30 10 : c#prim
+          if onclick (
+            boot_apps.delete(count)
+            network "update" "onboot" boot_apps
+          )
+        )
+        icon "bin" 0.8 : c#txtc
+      )
+      page_len = boot_apps.len + 2 * 60
+      break
+    case "Storage"
+      file "open" "Origin/(C) Users.folder"
+      y = -160 + 75 + scroll_y
+      loc 999 2 0 y
+      square frame_width - 30 140 10 1 : c#prim
+      loc 2 2 80 y
+      icon file[11] 3.3
+      text "(Network)" + username 15 : chx#80 chy#20 c#txtc
+      change_x 20
+      if network_drive[2] == 5000000 (
+        text "Free User" 10
+        text "Upgrade: " 10 : c#txtc chx#20
+        square 120 20 10 : c#prim chx#100
+        if onclick (
+          network "new_tab" "https://www.patreon.com/user?u=51594743"
+        )
+        image "https://raw.githubusercontent.com/Mistium/Origin-OS/main/OSL%20Programs/assets/Settings/originOS%20patreon%20badge.png" null 20
+      )
+      if network_drive[2] > 999999 (
+        used_big = (network_drive[2] / 1000000).round
+        unit = "mb"
+      )
+      if network_drive[2] > 999999999 (
+        used_big = (network_drive[2] / 1000000000).round
+        unit = "gb"
+      )
+      loc 2 2 160 y
+      text network_drive[1] / 1000 ++ "kb /" + used_big ++ unit 10
+      loc 999 2 125 / 2 y - 35
+      percent = network_drive[1] / network_drive[2]
+      c prim
+      bar frame_width - 200 20 10 percent seco
+      page_len = 460
+  
+      if total_files == 0 (
+        file "open" current[1] "onlyaccess"
+        file "get" 4
+        dat = data.str
+        file = dat.len + "bytes"
+        file "get" 2
+        file = " " * (15 - file.len) + file + "-" + data
+        file "get" 1
+        file.append(data)
+        files.append(file)
+        current.delete(1)
+        file "get" 1
+        if data == ".folder" (
+          file "get" 4
+          current = current ++ data
+        )
+  
+        goto frame.left + 30 scroll_y + 40
+        direction (timer * 100).sin * 360
+        icon "w 2 cutcircle 0 0 10 0 90" 1 : c#txtc
+        direction 90
+        text files.len + "Files Processed" 10 : chx#30
+        
+        if current.len == 0 (
+          total_files = files.len
+          file_data = files.sort().reverse().trim(1,10)
+        )
+      ) else (
+        loc 2 2 20 -200 + scroll_y
+        text "Biggest Files" 9 : c#txtc
+        for i file_data.len (
+          loc 2 2 20 i * -30 - 200 + scroll_y
+          text file_data[i] 9
+        )
+        page_len = file_data.len * 30 + 200
+      )
+      break
+    case "Community"
+      loc 2 2 110 -30
+      button "My Patreon" 200 25 10 : c#prim
+      if onclick (
+        http "newtab" "https://www.patreon.com/user?u=51594743"
+      )
+      loc 2 2 10 -70
+      text "Patreon Supporters:" 10 : c#txtc
+      supporters = ["--- OriginDrive ---","Vernacular","Pnada","","--- Supporter ---","Pablo Estevez","Milodev123","","--- Free ---","Viofile"]
+      
+      loc 2 2 10 -100
+      count = scroll_y.divide(20).round
+      loop frame_height.divide(20).round (
+        count ++
+        loc 2 2 10 count * -20 + scroll_y - 100
+        text supporters.[count] 10
+      )
+      page_len = supporters.len * 20 + 100
+      break
+  )
+  clicked = false
+)
+
+def "network_page" (
+  loc 999 2 0 -70
+  w = frame.width - 25
+  square w 100 15 : c#seco
+  square w 100 10 : c#prim
+  if network.connected.not (
+    loc 2 2 100 -90
+    square 140 30 10 : c#prim
+    if clicked (
+      terminal "reconnect"
+    )
+    text "Reconnect" 10 : c#txtc chx#-60
+    loc 2 2 30 -40
+    temp = "Not Connected"
+    square 0 0 10 : c#ae2525
+  ) else (
+    loc 2 2 30 -40
+    temp = "Connected"
+    square 0 0 10 : c#24ad2c
+  )
+  text temp 10 : c#txtc chx#15
+)
+
+def "colour_selector" "this.name,this.id" (
+  loc 9999 2 0 y
+  w = frame.width - 25
+  square w 30 15 : c#prim
+  if mouse_touching (
+    square w 30 15 : c#seco
+    square w 30 10 : c#prim
+  )
+  loc 2 2 15 y
+  text this.name ++ ":" 10 : c#txtc
+  loc -2 2 -130 y
+  text theme_select[this.id] 10
+  square 0 0 25 0 : chx#30
+  c theme_select[this.id]
+  square 0 0 20 0
+  if onclick (
+    colourpicker "setcol" theme_select[this.id]
+    colourpicker "show"
+    selected_col = this.id
+  )
+  if user.theme[this.id] != theme_select[this.id] (
+    change_x -120
+    square 20 20 10 0 1 : tooltip#"Reset Colour"
+    if mouse_touching (
+      square 20 20 15 : c#seco
+      square 20 20 10 : c#prim
+    )
+    icon "reload" 0.5 : c#txtc
+    if onclick (
+      theme_select[this.id] = user.theme[this.id]
+      colourpicker "setcol" theme_select[this.id]
+      selected_col = this.id
+    )
+  )
+)
+
+def "appearance" (
+  switch subcategory (
+    case "none"
+      option "Background" "w 3 square 0 0 10 10 line 5 -5 3 -3 cont 2 -4 line 1 -5 -2 -2 cont -5 -5 w 6 dot 3 4"
+      option "Dock" "w 6 line -7 -7 0 -7 line 7 -7 7 -7"
+      option "Colours" "w 3 cutcircle 0 -3 5 18 120 cont 0 8 cont 4.9 -1.5 line 4 -3 -4 -3 line 4 -5.5 -4 -5.5"
+      option "File Types" "w 4 line -8 10 3 10 cont 8 5 cont 8 -10 cont -8 -10 cont -8 10"
+      option "Mouse" "line -9 9 7 -1 cont -5 -6 cont -9 9 line 5.8 -10 -9 9 line 0 0 -5 -5"
+      break
+    case "Background"
+      y = -30 + scroll_y
+      w = frame.width - 25
+      loc 9999 2 0 y
+      square w 30 15 : c#prim
+      if onclick (;current_wallpaper = clipboard.str;)
+      loc 2 2 50 y
+      text "Click To Add Wallpaper Url In Clipboard" 10 : c#txtc
+      loc 2 2 25 y
+      icon "w 4 square 0 0 7 8 line -2 6 2 6 line 0 10 0 10" 0.7 : c#txtc
+      if wallpapers.contains(current_wallpaper).not (
+        if current_wallpaper.imageinfo("loaded") (
+          wallpapers.insert(1,current_wallpaper.destr)
+          save "wallpapers.json" "set" wallpapers
+          current_wallpaper = ""
+        )
+        if current_wallpaper == clipboard.str (
+          image current_wallpaper 0 0
+          text "Trying" 10 : c#txtc chx#20
+        )
+      )
+      wallpaper_data = "Total:" + wallpapers.len
+      loc -2 2 -15 - (wallpaper_data.len * 10) y
+      text wallpaper_data 10
+      y -= 152
+      loc 4 2 -2.5 y
+      w = frame.width / 2 - 30
+      square w 230 15 : c#prim
+      image background_url w 200 : chy#-10
+      y2 = y + 50
+      systemvars "getvar" "SYSTEM // Background Mode"
+      back_mode = data
+      
+      modes = ["Fill","Center","Fit","Stretch"]
+      for i 4 (
+        loc -4 2 0 y2
+        cur = modes[i]
+        square w 30 15 : c#prim
+        if mouse_touching or cur == back_mode (
+          square w 30 15 : c#seco
+          square w 30 10 : c#prim
+          if onclick (
+            terminal "system wallpapermode" + cur
+            network "update" "wallpaper_mode" cur
+          )
+        )
+        change_x w / -2 + 10
+        text cur 10 : c#txtc
+        y2 -= 50
+      )
+      loc 2 2 20 y + 105
+      text "Current Wallpaper" 10 : c#txtc
+      loc 9999 2 20 y + 105
+      text "Wallpaper Mode" 10
+      y -= 8
+      for count wallpapers.len (
+        if count % 2 == 1 (
+          y -= 230
+        )
+        if count % 2 == 1 "loc 4 2 0 y" else "loc -4 2 0 y"
+        square w 200 15 : c#prim
+        cur = wallpapers[count]
+        image cur w 200
+        change_x -40
+        square 20 20 20 : c#prim
+        if mouse_touching (
+          if clicked.not "square 20 20 23"
+          if onclick (
+            terminal "system wallpaper" + cur
+            network "update" "wallpaper" cur
+          )
+        )
+        icon "tick" 0.7 : c#txtc
+        change_x 80
+        square 20 20 20 : c#prim
+        if mouse_touching (
+          if clicked.not "square 20 20 23"
+          if onclick (
+            wallpapers.delete(count)
+            save "wallpapers.json" "set" wallpapers
+          )
+        )
+        icon "bin" 0.7 : c#txtc
+      )
+      page_len = (wallpapers.len / 2).ceiling * 230 + 310
+      break
+    case "Dock"
+      if new_transmit (
+        file "open" transmit_data "onlyaccess"
+        f = fileGet(3) ++ "/" ++ fileGet(2) ++ fileGet(1)
+        segments.append(f)
+        network "update" "origin_dock" segments
+        new_transmit = false
+      )
+      w = frame.width - 25
+      y = -30 + scroll_y
+      loc 9999 2 0 y
+      square w 30 15 : c#prim
+      loc 2 2 30 y
+      icon "w 4 cutcircle 0 -2 11 13.5 150 line -6 9 0 15 line -6 10 0 3" 0.6 : c#txtc
+      text "Reset Dock To Default" 9 : chx#20
+      if clicked (
+        segments = ["Origin/(A) System/Docks/Modules/main.ode","Origin/(A) System/Docks/Modules/applications.ode","Origin/(A) System/Docks/Modules/running.ode","Origin/(A) System/Docks/Modules/folders.ode","Origin/(A) System/Docks/Modules/time.ode","Origin/(A) System/Docks/Modules/battery.ode"]
+        network "update" "origin_dock" segments
+      )
+      if file_dropped != 0 (
+        file "open" file_dropped "onlyaccess"
+        data = fileGet(1)
+        if data == ".ode" (
+          f = fileGet(3) ++ "/" ++ fileGet(2) ++ data
+          segments.append(f)
+          network "update" "origin_dock" segments
+        )
+        file_dropped = 0
+      )
+      loc 9999 2 0 y - 50
+      square w 30 15 : c#prim
+      if onclick (
+        file "pick" "ode"
+        can = false
+      )
+      loc 2 2 30 y - 50
+      icon "upload" 0.7 : c#txtc
+      text "Click here or drop an ode file to add it to your dock" 9 : chx#20
+      for count segments.len (
+        y = count + 2 * -50 + scroll_y
+        loc 999 2 0 y
+        w = frame_width - 25
+        square w 30 15 : c#prim
+        if mouse_touching (
+          square w 30 15 : c#seco
+          square w 30 10 : c#prim
+        )
+        loc 2 2 15 y
+        text segments[count] 9 : c#txtc
+        loc -2 2 -28 y
+        square 30 30 10 0 1
+        if mouse_touching (
+          square 30 30 15 : c#seco
+          square 30 30 10 : c#prim
+          if onclick (
+            segments.delete(count)
+            network "update" "origin_dock" segments
+          )
+        )
+        icon "bin" 0.8 : c#txtc
+        change_x -45
+        if count > 1 (
+          square 30 30 15 0 1
+          if mouse_touching (
+            square 30 30 15 : c#seco
+            square 30 30 10 : c#prim
+            if onclick (
+              segments.swap(count - 1,count)
+              network "update" "origin_dock" segments
+            )
+          )
+          icon "up" 0.8 : c#txtc
+        )
+        if count < segments.len (
+          change_x -45
+          square 30 30 15 0 1
+          if mouse_touching (
+            square 30 30 15 : c#seco
+            square 30 30 10 : c#prim
+            if onclick (
+              segments.swap(count,count + 1)
+              network "update" "origin_dock" segments
+            )
+          )
+          icon "down" 0.8 : c#txtc
+        )
+      )
+      page_len = segments.len + 2 * 60
+      break
+    case "Colours"
+      if theme_select.isType("object").not (
+        window_accent = global_accent
+        theme_select = user.theme
+      )
+  
+      y = -30 + scroll_y
+      colour_selector "Accent Colour" "accent"
+
+      y -= 70
+      colour_selector "Window Background" "background"
+      y -= 50
+      colour_selector "Window Primary" "primary"
+      y -= 50
+      colour_selector "Window Secondary" "secondary"
+      y -= 50
+      colour_selector "Window Tertiary" "tertiary"
+      y -= 50
+      colour_selector "Window Text And Icons" "text"
+  
+      switch selected_col (
+        case "accent"
+          window_accent = picker_colour
+          break
+        case "background"
+          window_colour = picker_colour
+          break
+        case "primary"
+          prim = picker_colour
+          break
+        case "secondary"
+          seco = picker_colour
+          break
+        case "tertiary"
+          tert = picker_colour
+          break
+        case "text"
+          txtc = picker_colour
+          break
+      )
+      if selected_col != "" (
+        theme_select[selected_col] = picker_colour
+      )
+      
+      y -= 50
+      loc 9999 2 0 y
+      w = frame.width - 25
+      square w 30 15 : c#prim
+      if mouse_touching (
+        if onclick (
+          network "update" "theme" theme_select
+        )
+        square w 30 15 : c#seco
+        square w 30 10 : c#prim
+      )
+      loc 2 2 30 y
+      icon "save" 0.7 : c#txtc
+      text "Save And Apply Theme" 9 : chx#30
+      
+      y -= 80
+      each theme themes.getKeys() (
+        loc 9999 2 0 y
+        square w 30 15 : c#prim
+        if mouse_touching (
+          if onclick (
+            theme_select = themes[theme]
+            selected_col = ""
+            
+            prim = theme_select.primary
+            seco = theme_select.secondary
+            tert = theme_select.tertiary
+            txtc = theme_select.text
+            window_colour = theme_select.background
+            window_accent = global_accent
+          )
+        )
+        loc 2 2 30 y
+        text theme 10 : c#txtc
+        y -= 50
+      )
+      
+      page_len = 380 + (themes.len * 50)
+      
+      break
+    case "File Types"
+      count = 0
+      loop ftkeys.len (
+        count ++
+        y = count * -60 + scroll_y + 20
+        loc 999 2 0 y
+        square frame_width - 20 40 10 : c#prim hover_c#seco
+        loc 2 2 30 y
+        c seco
+        square 30 30 10
+        c txtc
+        ftv = ftvalues[count]
+        icon ftv[1] 0.8
+        text `${ftv[2]} (${ftkeys[count]})` 10 : chx#30 c#txtc
+      )
+      page_len = count * 60 - 20
+      break
+    case "mouse"
+      loc 2 2 10 -20
+      text "Scroll Wheel Speed" 9 : c#txtc
+      terminal "get scrollspeed"
+      toggle_invert = data[1] != "-"
+      slider_scrollsp = data.abs.clamp(-10,10)
+      if slider_scrollsp.abs < 1 (
+        if slider_scrollsp > 0 (
+          slider_scrollsp = 1
+        ) else (
+          slider_scrollsp = -1
+        )
+      )
+      loc 2 2 10 -90
+      text "Scrolling " ++ ((slider_scrollsp * 10).round / 10) ++ "x speed" 9 : c#txtc
+      slider_scrollsp = slider_scrollsp - 1 / 9
+      loc 999 2 0 -60
+      slider frame_width - 30 20 "scrollsp" 10 : c#prim
+      slider_scrollsp = slider_scrollsp * 9 + 1
+      loc 2 2 10 -140
+      text "Invert Scroll Direction" 9 : c#txtc
+      toggle "invert" 20 : c#prim chx#30
+      if toggle_invert (
+        temp = slider_scrollsp
+      ) else (
+        temp = slider_scrollsp * -1
+      )
+      terminal "system scrollspeed" + temp
+      if temp != user.scrollspeed (
+        loc -2 2 -120 -140
+        square 200 20 15 0 1
+        if onclick (
+          network "update" "scrollspeed" temp
+        )
+        c prim
+        if mouse_touching and clicked.not (
+          square 200 25 12
+        ) else (
+          square 200 25 10
+        )
+        text "Sync With Network" 9 : c#txtc chx#-95
+      )
+      break
+  )
+  frame "clear"
+)
+
+def "account" (
+  this.w = frame_width - 25
+  
+  loc 999 2 0 -85
+  square this.w 130 15 : c#prim
+  
+  
+  loc 2 2 78 -85
+  image user_icon.str 120 120
+  icon round_pfp 5.8 : c#prim
+  square 90 90 12 0 1
+  if timer - upload_time < 5 and current_pfp != "" (
+    direction timer * 300
+    icon "cutcircle 0 0 10 0 90" 1 : c#txtc
+    direction 90
+  ) else (
+    if mouse_touching (
+      if clicked (
+        current_pfp = clipboard.str
+        upload_time = timer
+      )
+      square 25 25 12 : c#seco
+      icon "w 4 square 0 0 7 8 line -2 6 2 6 line 0 10 0 10" 0.7 : c#txtc
+      loc 2 2 80 -50
+      square 81 10 20 : c#seco
+      text "Paste Url" 9 : chx#-40.5 c#txtc
+    )
+  )
+  loc 2 2 150 -70
+  text username 15 : c#txtc
+  loc 2 2 150 -95
+  text user.system + "Account" 10
+  loc 2 2 150 -120
+  text tier 10
+  if current_pfp != "" (
+    image current_pfp 0 0
+    if timer - upload_time > 5 (
+      current_pfp = ""
+      say "Failed to load pfp, try a different   website or try again"
+    )
+    if current_pfp.imageinfo("loaded") (
+      network "update" "pfp" current_pfp
+      current_pfp = ""
+    )
+  )
+  if network.connected (
+    network "get" "https://raw.githubusercontent.com/RoturTW/Badges/main/badges.json"
+    all_badges = data
+  )
+  if all_badges.istype("object") (
+    badges = user["sys.badges"]
+    loc -2 2 -30 -130
+    each badge badges (
+      icon all_badges[badge].icon 1.2 : tooltip#badge
+      if onclick (
+        say all_badges[badge].description
+      )
+      change_x -30
+    )
+  )
+  
+  loc -2 2 -30 -30
+  icon "log-out" 0.8 : c#txtc tooltip#"Logout"
+  if onclick (
+    network "logout"
+    terminal "shutdown"
+  )
+  
+  
+  goto 0 frame.top - 200
+  setting_do "Change Password" this.w def() -> (
+    network "update" "password" "Enter Your New Password".ask().hashMD5()
+  )
+)
+
+def "time" (
+  w = frame_width - 25
+  loc 999 2 0 -40
+  square w 40 15 1 : c#prim
+  loc 999 2 0 -100
+  square w 40 15 1
+  loc 999 2 0 -160
+  square w 40 15 1
+  loc 2 2 20 -40
+  text `Timezone: ${timezone}` 8 : c#txtc
+  loc 2 2 20 -100
+  milisecond = timestamp.right(3)
+  text `Time: ${day_number}:${month_number}:${year} ${hour}:${minute}:${second}:${milisecond}` 8
+  loc 2 2 20 -160
+  dt = delta_time * 1000
+  dt = dt.round
+  text `Since Last Frame: ${dt}ms` 8
+)
+
+def "privacy" (
+  this.w = frame_width - 25
+  set_y frame.top - 35
+  setting_toggle "Private Account?" this.w user.private def() -> (
+    network "update" "private" user.private.not
+  )
+)
+
+def "updates" (
+  version = origin.version
+  loc 2 2 20 -20 + scroll_y
+  text "Current Version:" + version 10 : c#txtc
+)
+
+def "credits" (
+  if subcategory == "none" (
+    page_len = 290
+    w = frame_width / 2 - 40
+    loc 4 2 2.5 -120 + scroll_y
+    square w 200 20 : c#prim
+    square w 150 15 : chy#25 c#global_accent
+    square w 150 8 : c#prim
+    c txtc
+    x = x_position
+    change_x -65
+    icon "w 1 ellipse 0 0 10 0.5 100 ellipse 0 0 10 0.5 160 ellipse 0 0 10 0.5 220" 1.3
+    text "roturTw" 15 : chx#30
+    change -25 -18
+    text "v5" 8
+    set_x x - ( w / 2 - 10 )
+    change_y -90
+    text "Powering originNetworking" 9
+    set_x x
+    change_y -70
+    square w 40 20 : c#prim
+    if clicked (
+      subcategory = "Extensions"
+      extensions = "Object.keys(Object.fromEntries(vm.extensionManager._loadedExtensions))".eval
+      extensions.prepend("Total:" + extensions.len)
+    )
+    change_x w / -2 + 10
+    text "Full Extensions List >" 9 -100 : c#txtc
+    loc -4 2 -2.5 -95 + scroll_y
+    square w 150 20 : c#prim
+    x = x_position
+    change w / -2 + 30 40
+    image "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Resources/turbowarp_logo.png" 50 50
+    change 30 12
+    text "Turbowarp" 12 : c#txtc
+    change -162 -32
+    text "      Thanks to GarboMuffin and the scratch team for making turbowarp possible".wrapText(w / 9 - 1) 9
+    set_x x
+    change_y -175
+    square w 100 20 : c#prim
+    set_x 20
+    change_y 40
+    text "Github Contributors >" 9 : c#txtc
+    set_x 30
+    change_y -30
+    for i c_imgs.len (
+      image c_imgs[i].str 25 25
+      change_x 30
+    )
+  )
+  if subcategory == "Extensions" (
+    w = frame_width - 25
+    for count extensions.len (
+      y = count - 0.5 * -60 + scroll_y
+      loc 999 2 0 y
+      square w 40 15 1 : c#prim
+      if mouse_touching (
+        square w 40 15 : c#seco
+        square w 40 10 1 : c#prim
+      )
+      loc 2 2 15 y
+      text extensions[count] 9 : c#txtc
+    )
+    page_len = extensions.len - 0.5 * 60
+  )
+)
+
+if passed_data == "" (
+  category = "System"
+  subcategory = "none"
+) else (
+  passed_data.split("/")
+  category = passed_data[1]
+  subcategory = passed_data[2]
+)
+
+save "settings" "set_directory"
+file "open" user_folder ++ ".folder"
+current = file[4]
+files = []
+file_data = ""
+total_files = 0
+contributors = [{"login":"Mistium","avatar_url":"https://avatars.githubusercontent.com/u/92952823?v=4"},{"login":"koo1140","avatar_url":"https://avatars.githubusercontent.com/u/112756430?v=4"},{"login":"RattusDong","avatar_url":"https://avatars.githubusercontent.com/u/147535283?v=4"},{"login":"vernacular7","avatar_url":"https://avatars.githubusercontent.com/u/132183833?v=4"},{"login":"MILO123PRO","avatar_url":"https://avatars.githubusercontent.com/u/64213421?v=4"},{"login":"Rainbow10000","avatar_url":"https://avatars.githubusercontent.com/u/144138634?v=4"},{"login":"ThePandaDever","avatar_url":"https://avatars.githubusercontent.com/u/73702185?v=4"},{"login":"Dighoster9797","avatar_url":"https://avatars.githubusercontent.com/u/141959187?v=4"},{"login":"Kasairoe","avatar_url":"https://avatars.githubusercontent.com/u/146598325?v=4"}]
+c_names = contributors.destr.getall("login")
+c_imgs = contributors.destr.getall("avatar_url")
+
+window "dimensions" 880 500
+dock_location = dock_location
+media = ""
+segments = user.origin_dock
+accent_select = ""
+tier = null
+network_drive = "none"
+gotosubcategory = ""
+current_pfp = ""
+save "wallpapers.json" "get"
+wallpapers = save_data
+if wallpapers.len < 1 or wallpapers.istype("Array").not (
+  wallpapers = [
+    "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Wallpapers/originOS%20Dawn.png",
+    "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Wallpapers/originOS%20Rift.png",
+    "https://raw.githubusercontent.com/Mistium/Origin-OS/main/Wallpapers/originOS%20Flow.png",
+    "https://images.pexels.com/photos/589810/pexels-photo-589810.jpeg",
+    "https://images.pexels.com/photos/1612351/pexels-photo-1612351.jpeg",
+    "https://images.pexels.com/photos/640781/pexels-photo-640781.jpeg",
+    "https://images.pexels.com/photos/7919/pexels-photo.jpg",
+    "https://images.pexels.com/photos/1366957/pexels-photo-1366957.jpeg"
+  ]
+  save "wallpapers.json" "set" wallpapers
+)
+
+themes = {
+  "dark":{"primary":"#222222","secondary":"#555555","tertiary":"#777777","text":"#ffffff","background":"#050505"},
+  "midnight":{"primary":"#111111","secondary":"#333333","tertiary":"#555555","text":"#ffffff","background":"#000000"},
+  "light":{"primary":"#cccccc","secondary":"#e6e6e6","tertiary":"#ffffff","text":"#292929","background":"#b0b0b0"},
+  "ocean":{"primary":"#1a1d28","secondary":"#313f4e","tertiary":"#4f617d","text":"#bae3ee","background":"#090a0b"},
+  "forest":{"primary":"#1a2823","secondary":"#33523e","tertiary":"#417656","text":"#e5ffed","background":"#090b0a"},
+  "mint":{"primary":"#8fbcac","secondary":"#639274","tertiary":"#07170e","text":"#000000","background":"#cde5dd"},
+  "candyfloss":{"primary":"#9e8cb1","secondary":"#eac5f2","tertiary":"#170717","text":"#000000","background":"#cdb6d3"},
+}
+
+
+round_pfp = "w 2 line 11 11 11 -11 cont -11 -11 cont -11 11 cont 11 11 cutcircle 9 9 2 4. 45 cutcircle 9 -9 2 13.5 40 cutcircle -9 9 2 -4.5 45 cutcircle -9 -9 2 -13.5 45"
+
+
+system
+// file type pages
+ftkeys = file_types.getKeys()
+ftvalues = file_types.getValues()
+
+
+window "set_dragbox" [[2,2,260,0],[-2,2,-100,-40]]
+mainloop:
+glass:frame window.left window.top window.right window.bottom
+c window_colour
+pen "opacity" 90
+icon "w 99999 dot 0 0" 10
+pen "opacity" 0
+frame "clear"
+
+loc 999 2 120 -20
+square window_width - 215 40 15 : c#prim
+
+loc 2 2 25 -25
+DrawCategory "System" "w 2 cutcircle 0 0 12 4.5 150 cutcircle 0 0 7 5 150 line -2 -4 -8 -10"
+DrawCategory "Network" "w 2.5 cutcircle 0 -5 14 0 45 cutcircle 0 -5 7 0 40 w 4 dot 0 -6"
+DrawCategory "Appearance" "w 3 cutcircle 5 6 3 45 80 line 7.5 4 -4.5 -9 line 3.5 8.5 -9 -5 line -9 -5 -11 -11 line -4.5 -9 -11 -11"
+DrawCategory "Account"
+DrawCategory "Time" "w 2 cutcircle 0 0 12 0 180 w 3 line 0 0 0 5 line 0 0 3 -3"
+DrawCategory "Privacy" "w 12 dot 2.5 2.5 w 5 line 2.5 2.5 -7 -7 w 3 line -6.5 -6.5 -3.5 -9.5 line -4 -4 -1 -7"
+DrawCategory "Updates" "w 3 cutcircle 0 -2 9 13.5 150 line -6 8 0 14 line -6 8 0 0"
+DrawCategory "Credits" "w 3 cutcircle -4.5 -10 5.5 0 90 cutcircle 4 -5.5 6 3 60 cutcircle -5 5 2 0 180 cutcircle 5 8 2 0 180"
+
+loc 2 2 25 -175
+image user_icon.str 35 35
+
+loc 2 2 232 -25
+if subcategory == "none" (
+  text category 10 : c#txtc
+) else (
+  change_x 10
+  square 20 20 15 0 1
+  if mouse_touching (
+    square 20 20 15 : c#seco
+    square 20 20 10 : c#prim
+  )
+  icon "left-arrow" 0.6 : c#txtc
+  if clicked (
+    subcategory = "none"
+  )
+  change_x 30
+  text subcategory 10
+)
+c seco
+frame window.left + 215 window.top - 47 window.right window.bottom page_len
+page_len = 0
+y = -29 + scroll_y
+startx = x_position
+location = category + subcategory
+switch category (
+  case "System"
+    system
+    break
+  case "Network"
+    network_page
+    break
+  case "Appearance"
+    appearance
+    break
+  case "Account"
+    account
+    break
+  case "Apps"
+    apps
+    break
+  case "Time"
+    time
+    break
+  case "Privacy"
+    privacy
+    break
+  case "updates"
+    updates
+    break
+  case "credits"
+    credits
+    break
+)
+
+if mouse_down.not "can = True"
+frame "clear"
+
+if gotosubcategory != "" and mouse_down.not (
+  subcategory = gotosubcategory
+  gotosubcategory = ""
+)
+window "show"
+import "win-buttons"

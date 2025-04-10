@@ -1,0 +1,118 @@
+import "window_tools"
+
+permission "request" "account"
+
+page = "Friends"
+selected_user = ""
+sending = false
+
+
+mainloop:
+load_theme
+
+list = page == "Friends" ? user["sys.friends"] user["sys.requests"]
+loc 2 999 150 0
+square 300 window_height 10 : c#prim
+loc 2 2 10 -20
+text page 10 : c#txtc
+loc 2 2 280 -20
+icon "add" 0.5
+if onclick (
+  sending = true
+  selected_user = ""
+)
+length = list.len * 40
+c #seco
+frame window.left window.top - 50 window.left + 300 window.bottom + 50 length
+  if length == 0 (
+    loc 2 2 10 -20
+    text `No ${page}` 10 : c#txtc
+  ) else (
+    count = (scroll_y / 40).round
+    y = scroll_y - 20 + (count * -40)
+    loop (frame_height / 40).ceiling.clamp(1,length) (
+      count ++
+      loc 999 2 0 y
+      square frame_width - 20 25 13 : c#seco
+      square frame_width - 20 25 10 : c#prim hover_c#seco
+      if onclick (
+        selected_user = list[count]
+      )
+      text list[count] 10 : c#txtc chx#-135
+      y -= 40
+    )
+  )
+frame "clear"
+loc 2 -2 150 30
+square 300 50 10 : c#tert
+loc 2 -2 80 30
+square 130 30 10 : c#prim hover_c#seco
+if onclick (
+  page = "Friends"
+  selected_user = ""
+)
+text "Friends" 9 : c#txtc chx#-32
+loc 2 -2 225 30
+square 130 30 10 : c#prim hover_c#seco
+if onclick (
+  page = "Requests"
+  selected_user = ""
+)
+text "Requests" 9 : c#txtc chx#-35
+frame window.left + 300 window.top - 50 window.right window.bottom
+if selected_user == "" (
+  if sending (
+    loc 2 2 15 -25
+    text selected_user 10 : c#txtc
+    w = frame_width - 35
+    loc 9999 2 0 -65
+    square w 30 12 : c#prim
+    input w - 10 30 "username" "Enter The Username To Request" txtc
+    loc 9999 2 0 -120
+    square w 30 12 : c#prim hover_c#seco
+    if onclick (
+      network "server" "friend_request" input_username
+      selected_user = ""
+      sending = false
+    )
+    text "Send Request" 10 : c#txtc chx#-60
+  ) else (
+    loc 2 2 15 -25
+    text "Select a user" 10 : c#txtc
+  )
+) else (
+  w = frame_width - 35
+  loc 2 2 15 -25
+  text selected_user 10 : c#txtc
+  if page == "Requests" (
+
+    loc 9999 2 0 -65
+    square w 30 12 : c#global_accent
+    if onclick (
+      network "server" "friend_accept" selected_user
+      selected_user = ""
+    )
+    square w 30 9 : c#prim hover_c#seco
+    text "Accept Request" 10 : c#txtc chx#-65
+
+
+    loc 9999 2 0 -120
+    square w 30 12 : c#prim hover_c#seco
+    if onclick (
+      network "server" "friend_decline" selected_user
+      selected_user = ""
+    )
+    text "Decline Request" 10 : c#txtc chx#-70
+  )
+  if page == "Friends" (
+    loc 9999 2 0 -65
+    square w 30 12 : c#prim hover_c#seco
+    if onclick (
+      network "server" "friend_remove" selected_user
+      selected_user = ""
+    )
+    text "Remove Friend" 10 : c#txtc chx#-60
+  )
+)
+frame "clear"
+import "win-buttons"
